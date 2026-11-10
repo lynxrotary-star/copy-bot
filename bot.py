@@ -5,9 +5,11 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters, CommandHandler
 
 TOKEN = os.environ.get('TOKEN')
-
-# ТУТ АВТОМАТИЧЕСКИ ВПИСАН ВАШ КАНАЛ
 CHANNEL_ID = "@g_to4ka" 
+
+# ВАШИ ХЭШТЕГИ И ССЫЛКА НА КАНАЛ
+# \n\n делает два отступа вниз, чтобы отделить от промта
+HASHTAGS = "\n\n🔗 <a href='https://t.me/g_to4ka'><b>ТочкаG</b></a> | Подписаться\n#ТочкаG #нейросети #ИИарт #промты #Midjourney"
 
 app = Flask(__name__)
 
@@ -19,7 +21,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Привет! Пришли мне картинку с подписью (или текст) в формате:\n"
         "<b>Описание арта | Промт</b>\n\n"
-        "Я сразу опубликую это в канале без всяких надписей!",
+        "Я сразу опубликую это в канале с хэштегами!",
         parse_mode='HTML'
     )
 
@@ -35,20 +37,19 @@ async def handle_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Не найден разделитель |. Формат: Описание | Промт")
         return
 
-    final_text = f"{description}\n\n<b>Промт:</b>\n<code>{prompt}</code>"
+    # Собираем пост: Описание -> Промт в блоке -> Хэштеги внизу
+    final_text = f"{description}\n\n<b>Промт:</b>\n<code>{prompt}</code>{HASHTAGS}"
 
     try:
         if update.message.photo:
             photo_file_id = update.message.photo[-1].file_id
-            # Отправляем фото в канал
             await context.bot.send_photo(chat_id=CHANNEL_ID, photo=photo_file_id, caption=final_text, parse_mode='HTML')
         else:
-            # Отправляем текст в канал
             await context.bot.send_message(chat_id=CHANNEL_ID, text=final_text, parse_mode='HTML')
             
-        await update.message.reply_text("✅ Пост успешно опубликован в канале ТочкаG!")
+        await update.message.reply_text("✅ Пост с хэштегами успешно опубликован в канале ТочкаG!")
     except Exception as e:
-        await update.message.reply_text(f"❌ Ошибка публикации. Убедитесь, что бот админ в канале. Детали: {e}")
+        await update.message.reply_text(f"❌ Ошибка публикации. Детали: {e}")
 
 def run_flask():
     port = int(os.environ.get('PORT', 8080))
