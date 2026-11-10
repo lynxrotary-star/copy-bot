@@ -20,8 +20,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode='HTML'
     )
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "📖 <b>Инструкция:</b>\n\n"
+        "1. Отправьте фото с подписью (или просто текст).\n"
+        "2. Разделите описание и промт символом <b>|</b> (прямая черта).\n"
+        "3. Слева — текст для канала, справа — сам промт.\n\n"
+        "<b>Пример:</b>\n"
+        "Девушка в стиле киберпанк | cyberpunk girl, neon lights, 8k, detailed",
+        parse_mode='HTML'
+    )
+
 async def handle_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Берем текст из подписи к фото или из обычного сообщения
     text = update.message.caption if update.message.caption else update.message.text
     
     if not text:
@@ -35,10 +45,9 @@ async def handle_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Не найден разделитель |. Пожалуйста, используй формат: Описание | Промт")
         return
 
-    # Форматируем текст: описание + промт в блоке <code>
+    # Промт теперь без ограничения в 256 символов
     final_text = f"{description}\n\n<b>Промт:</b>\n<code>{prompt}</code>"
 
-    # Если пользователь прислал фото — отправляем фото с подписью
     if update.message.photo:
         photo_file_id = update.message.photo[-1].file_id
         await update.message.reply_photo(
@@ -47,7 +56,6 @@ async def handle_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode='HTML'
         )
     else:
-        # Если просто текст
         await update.message.reply_text(final_text, parse_mode='HTML')
 
 def run_flask():
@@ -59,6 +67,6 @@ if __name__ == '__main__':
     
     bot_app = ApplicationBuilder().token(TOKEN).build()
     bot_app.add_handler(CommandHandler("start", start))
-    # Обрабатываем и текст, и фото с подписями
+    bot_app.add_handler(CommandHandler("help", help_command))
     bot_app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, handle_post))
     bot_app.run_polling()
